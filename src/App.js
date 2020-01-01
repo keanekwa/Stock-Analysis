@@ -46,8 +46,8 @@ function App() {
               <Typography variant="h5">Valuation</Typography>
               <Typography variant="body1">Current Price: ${data.price}</Typography>
               <Typography variant="body1">Intrinsic Value: ${data.intrinsic_value}</Typography>
-              <Typography variant="body1">PE Ratio: ${data.pe}</Typography>
-              <Typography variant="body1">Forward PE: ${data.forward_pe}</Typography>
+              <Typography variant="body1">PE Ratio: {data.pe}</Typography>
+              <Typography variant="body1">Forward PE: {data.forward_pe}</Typography>
               <Typography variant="h5">Annual Financials</Typography>
               <Typography variant="body1">Mean Revenue Increase Per Year: {data.mean_revenue_increase_per_year} / 4 years)</Typography>
               <Typography variant="body1">Mean Net Income Increase Per Year: {data.mean_net_income_increase_per_year} / 4 years)</Typography>
