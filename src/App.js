@@ -9,7 +9,7 @@ import { createMuiTheme } from '@material-ui/core/styles'
 import { teal } from '@material-ui/core/colors'
 // API Imports
 import axios from 'axios'
-import exampleData from './exampleData'
+// import exampleData from './exampleData'
 
 const theme = createMuiTheme({	
 	palette: {
@@ -20,9 +20,9 @@ const theme = createMuiTheme({
 	}
 })
 
-function App() {
+const App = () => {
 	const [financialsData, setFinancialsData] = useState(null)
-	const [statisticsData, setStatisticsData] = useState(null)
+	const [analysisData, setAnalysisData] = useState(null)
 	const [query, setQuery] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
 	const [isError, setIsError] = useState(false)
@@ -53,29 +53,35 @@ function App() {
 		try {
 			const result = await axios({
 				"method":"GET",
-				"url": "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-statistics",
+				"url": "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-analysis",
 				"headers": {
 					"content-type":"application/octet-stream",
 					"x-rapidapi-host":"apidojo-yahoo-finance-v1.p.rapidapi.com",
 					"x-rapidapi-key":"805f819a5emsh95d2744e0ddef68p1d8500jsn95d02e0277d1"
 				},
 				"params": {
-					"region": "US", //to select which Yahoo Finance website to access (does not restrict only to US markets)
 					"symbol": query
 				}
 			})
 			console.log("result.data", result.data)
-			setStatisticsData(result.data)
+			setAnalysisData(result.data)
 		} catch (error) {
 			setIsError(true)
 		}
 
 		// console.log("financialsData", exampleData.financialsData)
 		// setFinancialsData(exampleData.financialsData)
-		// console.log("statisticsData", exampleData.statisticsData)
-		// setStatisticsData(exampleData.statisticsData)
+		// console.log("analysisData", exampleData.analysisData)
+		// setAnalysisData(exampleData.analysisData)
 		
 		setIsLoading(false)
+	}
+
+	let outstandingShares = 0, intrinsicValue = 0, currencySymbol = ""
+	if (financialsData !== null && analysisData !== null) {
+		currencySymbol = financialsData.price.currencySymbol
+		outstandingShares = analysisData.price.marketCap.raw / analysisData.price.regularMarketPrice.raw
+		intrinsicValue = calculateIntrinsicValue(analysisData, outstandingShares)
 	}
 
 	return (
@@ -94,92 +100,184 @@ function App() {
 						</Button>
 					</Grid>
 					<Grid item xs={12}>
-						{isError && <div>Something went wrong ...</div>}
-						{isLoading && <CircularProgress />}
-						{financialsData !== null && statisticsData !== null && (
-							<TableContainer>
-								<Table>
-									<TableHead>
-										<TableCell colSpan={7}>
-											<Typography variant="h5">{financialsData.quoteType.longName}</Typography>
-											<Typography variant="body2">{financialsData.price.exchangeName}</Typography>
-										</TableCell>
-									</TableHead>
-									
-									<TableHead>
-										<TableCell colSpan={7}>
-											<Typography variant="h6">Valuation</Typography>
-										</TableCell>
-									</TableHead>
-									<TableRow>
-										<TableCell>Current Price</TableCell>
-										<TableCell colSpan={6}>${financialsData.price.regularMarketPrice.fmt}</TableCell>
-									</TableRow>
-									<TableRow>
-										<TableCell>Trailing P/E</TableCell>
-										<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE.fmt}</TableCell>
-									</TableRow>
-									<TableRow>
-										<TableCell>Forward P/E</TableCell>
-										<TableCell colSpan={6}>{financialsData.summaryDetail.forwardPE.fmt}</TableCell>
-									</TableRow>
+						{
+							isLoading ? <CircularProgress /> :
+							isError ? <div>Something went wrong ...</div> :
+							financialsData !== null && analysisData !== null && (
+								<TableContainer>
+									<Table>
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h5">{financialsData.quoteType.longName}</Typography>
+													<Typography variant="body2">{financialsData.price.exchangeName}</Typography>
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">Valuation</Typography>
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											<TableRow>
+												<TableCell>Current Price</TableCell>
+												<TableCell colSpan={6}>{currencySymbol + financialsData.price.regularMarketPrice.fmt}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>Intrinsic Value</TableCell>
+												<TableCell colSpan={6}>{intrinsicValue !== 0 ? (currencySymbol + intrinsicValue) : "Calculation Error"}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>Trailing P/E</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE.fmt}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>Forward P/E</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.forwardPE.fmt}</TableCell>
+											</TableRow>
+										</TableBody>
 
-									<TableHead>
-										<TableCell colSpan={7}>
-											<Typography variant="h6">Financials</Typography>
-										</TableCell>
-									</TableHead>
-									{renderTableRows(financialsData, "yearly")}
-									{renderTableRows(financialsData, "quarterly")}
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">Financials</Typography>
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										{renderFinancials(financialsData, "yearly")}
+										{renderFinancials(financialsData, "quarterly")}
 
-									<TableHead>
-										<TableCell colSpan={7}>
-											<Typography variant="h6">Profitability</Typography>
-										</TableCell>
-									</TableHead>
-									<TableRow>
-										<TableCell>Gross Margin</TableCell>
-										<TableCell colSpan={6}>{statisticsData.financialData.grossMargins.fmt}</TableCell>
-									</TableRow>
-									<TableRow>
-										<TableCell>Profit Margin</TableCell>
-										<TableCell colSpan={6}>{statisticsData.financialData.profitMargins.fmt}</TableCell>
-									</TableRow>
-									<TableRow>
-										<TableCell>Return on Equity &#40;good to be more than 12%&#41;</TableCell>
-										<TableCell colSpan={6}>{statisticsData.financialData.returnOnEquity.fmt}</TableCell>
-									</TableRow>
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">Profitability</Typography>
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											<TableRow>
+												<TableCell>Gross Margin</TableCell>
+												<TableCell colSpan={6}>{analysisData.financialData.grossMargins.fmt}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>Profit Margin</TableCell>
+												<TableCell colSpan={6}>{analysisData.financialData.profitMargins.fmt}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>
+													Return on Equity<br/>
+													&#40;Good to be more than 12%&#41;
+												</TableCell>
+												<TableCell colSpan={6}>{analysisData.financialData.returnOnEquity.fmt}</TableCell>
+											</TableRow>
+										</TableBody>
 
-									<TableHead>
-										<TableCell colSpan={7}>
-											<Typography variant="h6">Debt Management</Typography>
-										</TableCell>
-									</TableHead>
-									<TableRow>
-										<TableCell>Debt to Equity Ratio &#40;good to be less than 1&#41;</TableCell>
-										<TableCell colSpan={6}>{(statisticsData.financialData.debtToEquity.raw / 100).toFixed(2)}</TableCell>
-									</TableRow>
-									<TableRow>
-										<TableCell>Current Ratio &#40;Current Assets / Current Liabilities - good to be more than 1&#41;</TableCell>
-										<TableCell colSpan={6}>{statisticsData.financialData.currentRatio.fmt}</TableCell>
-									</TableRow>
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">Growth Estimates</Typography>
+												</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>Period</TableCell>
+												<TableCell>Current Qtr</TableCell>
+												<TableCell>Next Qtr</TableCell>
+												<TableCell>Current Year</TableCell>
+												<TableCell>Next Year</TableCell>
+												<TableCell>Next 5 Years &#40;per annum&#41;</TableCell>
+												<TableCell>Past 5 Years &#40;per annum&#41;</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											<TableRow>
+												<TableCell>Estimate</TableCell>
+												<TableCell>{analysisData.earningsTrend.trend.find(t => t.period === "0q") && analysisData.earningsTrend.trend.find(t => t.period === "0q").growth.fmt}</TableCell>
+												<TableCell>{analysisData.earningsTrend.trend.find(t => t.period === "+1q") && analysisData.earningsTrend.trend.find(t => t.period === "+1q").growth.fmt}</TableCell>
+												<TableCell>{analysisData.earningsTrend.trend.find(t => t.period === "0y") && analysisData.earningsTrend.trend.find(t => t.period === "0y").growth.fmt}</TableCell>
+												<TableCell>{analysisData.earningsTrend.trend.find(t => t.period === "+1y") && analysisData.earningsTrend.trend.find(t => t.period === "+1y").growth.fmt}</TableCell>
+												<TableCell>{analysisData.earningsTrend.trend.find(t => t.period === "+5y") && analysisData.earningsTrend.trend.find(t => t.period === "+5y").growth.fmt}</TableCell>
+												<TableCell>{analysisData.earningsTrend.trend.find(t => t.period === "-5y") && analysisData.earningsTrend.trend.find(t => t.period === "-5y").growth.fmt}</TableCell>
+											</TableRow>
+										</TableBody>
 
-									<TableHead>
-										<TableCell colSpan={7}>
-											<Typography variant="h6">Dividend</Typography>
-										</TableCell>
-									</TableHead>
-									<TableRow>
-										<TableCell>Annual Dividend Yield</TableCell>
-										<TableCell colSpan={6}>{financialsData.summaryDetail.dividendYield.fmt}</TableCell>
-									</TableRow>
-									<TableRow>
-										<TableCell>Dividend Payout Ratio &#40;good to be less than 50%&#41;</TableCell>
-										<TableCell colSpan={6}>{financialsData.summaryDetail.payoutRatio.fmt}</TableCell>
-									</TableRow>
-								</Table>
-							</TableContainer>
-						)}
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">EPS History</Typography>
+												</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>
+													Quarter
+												</TableCell>
+												<TableCell colSpan={3}>
+													Actual
+												</TableCell>
+												<TableCell colSpan={3}>
+													Estimate
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										{renderEPSHistory(financialsData)}
+
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">Debt Management</Typography>
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											<TableRow>
+												<TableCell>
+													Free Cashflow Per Share
+												</TableCell>
+												<TableCell colSpan={6}>{currencySymbol + (analysisData.financialData.freeCashflow.raw / outstandingShares).toFixed(2)}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>
+													Debt to Equity Ratio<br/>
+													&#40;Good to be less than 1&#41;
+												</TableCell>
+												<TableCell colSpan={6}>{(analysisData.financialData.debtToEquity.raw / 100).toFixed(2)}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>
+													Current Ratio - Current Assets / Current Liabilities<br/>
+													&#40;Good to be more than 1&#41;
+												</TableCell>
+												<TableCell colSpan={6}>{analysisData.financialData.currentRatio.fmt}</TableCell>
+											</TableRow>
+										</TableBody>
+
+										<TableHead>
+											<TableRow>
+												<TableCell colSpan={7}>
+													<Typography variant="h6">Dividend</Typography>
+												</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											<TableRow>
+												<TableCell>Annual Dividend Yield</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.dividendYield.fmt}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>
+													Dividend Payout Ratio<br/>
+													&#40;Good to be less than 50%&#41;
+												</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.payoutRatio.fmt}</TableCell>
+											</TableRow>
+										</TableBody>
+									</Table>
+								</TableContainer>
+							)
+						}
 					</Grid>
 				</Grid>
 			</Container>
@@ -187,7 +285,62 @@ function App() {
 	)
 }
 
-const renderTableRows = (data, type) => {
+const calculateIntrinsicValue = (data, outstandingShares) => {
+	const stGrowthRate = data.earningsTrend.trend.find(t => t.period === "+5y") && data.earningsTrend.trend.find(t => t.period === "+5y").growth.raw
+	const ltGrowthRate = ((stGrowthRate / 2) <= 0.15) ? (stGrowthRate / 2) : 0.15
+	const beta = data.summaryDetail.beta.raw
+	let discountRate = 0
+
+	if (beta <= 0.8) {
+		discountRate = 0.05
+	} else if (beta <= 0.9) {
+		discountRate = 0.055
+	} else if (beta <= 1) {
+		discountRate = 0.06
+	} else if (beta <= 1.1) {
+		discountRate = 0.065
+	} else if (beta <= 1.2) {
+		discountRate = 0.07
+	} else if (beta <= 1.3) {
+		discountRate = 0.075
+	} else if (beta <= 1.4) {
+		discountRate = 0.08
+	} else if (beta <= 1.5) {
+		discountRate = 0.085
+	} else if (beta <= 1.6) {
+		discountRate = 0.09
+	} else {
+		console.log("discountRate error. beta =", beta)
+	}
+
+	let projectedCashflow = [], discountFactor = [], discountedCashflow = [], totalDiscountedCashflow = 0
+
+	for (let year = 0; year < 10; year++) {
+		if (year === 0) {
+			projectedCashflow.push(data.financialData.freeCashflow.raw * (1 + stGrowthRate))
+			discountFactor.push(1 / (1 + discountRate))
+		}
+
+		else {
+			discountFactor.push(discountFactor[year - 1] / (1 + discountRate))
+
+			if (year <= 2) {
+				projectedCashflow.push(projectedCashflow[year - 1] * (1 + stGrowthRate))
+			}
+			else {
+				projectedCashflow.push(projectedCashflow[year - 1] * (1 + ltGrowthRate))
+			}
+		}
+
+		const cashFlowForYear = projectedCashflow[year] * discountFactor[year]
+		discountedCashflow.push(cashFlowForYear)
+		totalDiscountedCashflow += cashFlowForYear
+	}
+
+	return ((totalDiscountedCashflow + data.financialData.totalCash.raw - data.financialData.totalDebt.raw) / outstandingShares).toFixed(2)
+}
+
+const renderFinancials = (data, type) => {
 	/* Start Financials */
 	let mappedDate = []
 	let dataFinancialsChart = data.earnings.financialsChart[`${type}`]
@@ -297,6 +450,44 @@ const renderTableRows = (data, type) => {
 				</TableRow>
 			</TableBody>
 		</>
+	)
+}
+
+const renderEPSHistory = (data) => {
+	let epsHistory = data.earnings.earningsChart.quarterly.map((d, idx) => {
+		return (
+			<TableRow key={idx}>
+				<TableCell>
+					{d.date}
+				</TableCell>
+				<TableCell colSpan={3}>
+					{d.actual.fmt}
+				</TableCell>
+				<TableCell colSpan={3}>
+					{d.estimate.fmt}
+				</TableCell>
+			</TableRow>
+		)
+	})
+
+	epsHistory.push(
+		<TableRow key={epsHistory.length}>
+			<TableCell>
+				{data.earnings.earningsChart.currentQuarterEstimateDate}{data.earnings.earningsChart.currentQuarterEstimateYear}
+			</TableCell>
+			<TableCell colSpan={3}>
+				-
+			</TableCell>
+			<TableCell colSpan={3}>
+				{data.earnings.earningsChart.currentQuarterEstimate.fmt}
+			</TableCell>
+		</TableRow>
+	)
+
+	return (
+		<TableBody>
+			{epsHistory}
+		</TableBody>
 	)
 }
 
