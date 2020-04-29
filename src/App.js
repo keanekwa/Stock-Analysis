@@ -479,7 +479,7 @@ const renderEPSHistory = (data) => {
 				-
 			</TableCell>
 			<TableCell colSpan={3}>
-				{data.earnings.earningsChart.currentQuarterEstimate.fmt}
+				{data.earnings.earningsChart.currentQuarterEstimate ? data.earnings.earningsChart.currentQuarterEstimate.fmt : '-'}
 			</TableCell>
 		</TableRow>
 	)
