@@ -81,7 +81,7 @@ const App = () => {
 	if (financialsData !== null && analysisData !== null) {
 		currencySymbol = financialsData.price.currencySymbol
 		outstandingShares = analysisData.price.marketCap.raw / analysisData.price.regularMarketPrice.raw
-		intrinsicValue = calculateIntrinsicValue(analysisData, outstandingShares)
+		intrinsicValue = calculateIntrinsicValue(financialsData, analysisData, outstandingShares)
 	}
 
 	return (
@@ -133,11 +133,11 @@ const App = () => {
 											</TableRow>
 											<TableRow>
 												<TableCell>Trailing P/E</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE.fmt}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE ? financialsData.summaryDetail.trailingPE.fmt : ''}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>Forward P/E</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.forwardPE.fmt}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.forwardPE ? financialsData.summaryDetail.forwardPE.fmt : ''}</TableCell>
 											</TableRow>
 										</TableBody>
 
@@ -236,7 +236,7 @@ const App = () => {
 												<TableCell>
 													Free Cashflow Per Share
 												</TableCell>
-												<TableCell colSpan={6}>{currencySymbol + (analysisData.financialData.freeCashflow.raw / outstandingShares).toFixed(2)}</TableCell>
+												<TableCell colSpan={6}>{currencySymbol + ((financialsData.cashflowStatementHistory.cashflowStatements[0].totalCashFromOperatingActivities.raw - financialsData.cashflowStatementHistory.cashflowStatements[0].capitalExpenditures.raw) / outstandingShares).toFixed(2)}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>
@@ -285,10 +285,30 @@ const App = () => {
 	)
 }
 
-const calculateIntrinsicValue = (data, outstandingShares) => {
-	const stGrowthRate = data.earningsTrend.trend.find(t => t.period === "+5y") && data.earningsTrend.trend.find(t => t.period === "+5y").growth.raw
+const calculateOperatingCashflowTTM = (financialsData) => {
+	let operatingCashflowSum = 0
+
+	financialsData.cashflowStatementHistoryQuarterly.cashflowStatements.forEach(s => {
+		operatingCashflowSum += s.totalCashFromOperatingActivities.raw
+	})
+
+	return operatingCashflowSum
+}
+
+const calculateCapitalExpenditureTTM = (financialsData) => {
+	let capitalExpenditureSum = 0
+
+	financialsData.cashflowStatementHistoryQuarterly.cashflowStatements.forEach(s => {
+		capitalExpenditureSum += s.capitalExpenditures.raw
+	})
+
+	return capitalExpenditureSum
+}
+
+const calculateIntrinsicValue = (financialsData, analysisData, outstandingShares) => {
+	const stGrowthRate = analysisData.earningsTrend.trend.find(t => t.period === "+5y") && analysisData.earningsTrend.trend.find(t => t.period === "+5y").growth.raw
 	const ltGrowthRate = ((stGrowthRate / 2) <= 0.15) ? (stGrowthRate / 2) : 0.15
-	const beta = data.summaryDetail.beta.raw
+	const beta = analysisData.summaryDetail.beta.raw
 	let discountRate = 0
 
 	if (beta <= 0.8) {
@@ -315,35 +335,48 @@ const calculateIntrinsicValue = (data, outstandingShares) => {
 
 	let projectedCashflow = [], discountFactor = [], discountedCashflow = [], totalDiscountedCashflow = 0
 
-	for (let year = 0; year < 10; year++) {
+	let freeCashflow = calculateOperatingCashflowTTM(financialsData) + calculateCapitalExpenditureTTM(financialsData)
+	// note: capitalExpenditures is a negative number, that's why it is plus, not minus, in the above line
+
+	for (let year = 0; year < 11; year++) {
 		if (year === 0) {
-			projectedCashflow.push(data.financialData.freeCashflow.raw * (1 + stGrowthRate))
+			projectedCashflow.push(freeCashflow * (1 + stGrowthRate))
 			discountFactor.push(1 / (1 + discountRate))
 		}
 
 		else {
 			discountFactor.push(discountFactor[year - 1] / (1 + discountRate))
 
-			if (year <= 2) {
+			if (year <= 3) {
 				projectedCashflow.push(projectedCashflow[year - 1] * (1 + stGrowthRate))
 			}
 			else {
 				projectedCashflow.push(projectedCashflow[year - 1] * (1 + ltGrowthRate))
 			}
-		}
 
-		const cashFlowForYear = projectedCashflow[year] * discountFactor[year]
-		discountedCashflow.push(cashFlowForYear)
-		totalDiscountedCashflow += cashFlowForYear
+			const cashflowForYear = projectedCashflow[year] * discountFactor[year]
+			discountedCashflow.push(cashflowForYear)
+			totalDiscountedCashflow += cashflowForYear
+		}
 	}
 
-	return ((totalDiscountedCashflow + data.financialData.totalCash.raw - data.financialData.totalDebt.raw) / outstandingShares).toFixed(2)
+	console.log('operating cashflow', calculateOperatingCashflowTTM(financialsData))
+	console.log('capital expenditures', calculateCapitalExpenditureTTM(financialsData))
+	console.log('freeCashflow', freeCashflow)
+	console.log('discountedCashflow', discountedCashflow)
+
+	console.log('totalDiscountedCashflow', totalDiscountedCashflow)
+	console.log('total cash', analysisData.financialData.totalCash.raw)
+	console.log('total debt', analysisData.financialData.totalDebt.raw)
+	console.log('outstanding shares', outstandingShares)
+
+	return ((totalDiscountedCashflow + (discountedCashflow[9] * 12) + analysisData.financialData.totalCash.raw - analysisData.financialData.totalDebt.raw) / outstandingShares).toFixed(2)
 }
 
-const renderFinancials = (data, type) => {
+const renderFinancials = (analysisData, type) => {
 	/* Start Financials */
 	let mappedDate = []
-	let dataFinancialsChart = data.earnings.financialsChart[`${type}`]
+	let dataFinancialsChart = analysisData.earnings.financialsChart[`${type}`]
 	let mappedRevenue = [], meanRevenueIncrease = 0, positiveRevenueIncreaseCount = 0
 	let mappedEarnings = [], meanEarningsIncrease = 0, positiveEarningsIncreaseCount = 0
 
@@ -370,7 +403,7 @@ const renderFinancials = (data, type) => {
 	meanRevenueIncrease /= dataFinancialsChart.length
 	meanEarningsIncrease /= dataFinancialsChart.length
 
-	// reverse cos the data is somehow old to new. I want new to old (new at leftmost side)
+	// reverse cos the analysisData is somehow old to new. I want new to old (new at leftmost side)
 	mappedDate.reverse()
 	mappedRevenue.reverse()
 	mappedEarnings.reverse()
@@ -379,9 +412,9 @@ const renderFinancials = (data, type) => {
 	/* Start Cashflow */
 	let dataCashflowStatements = []
 	if (type === "yearly") {
-		dataCashflowStatements = data.cashflowStatementHistory.cashflowStatements
+		dataCashflowStatements = analysisData.cashflowStatementHistory.cashflowStatements
 	} else if (type === "quarterly") {
-		dataCashflowStatements = data.cashflowStatementHistoryQuarterly.cashflowStatements
+		dataCashflowStatements = analysisData.cashflowStatementHistoryQuarterly.cashflowStatements
 	}
 	let mappedCashflow = [], meanCashflowIncrease = 0, positiveCashflowIncreaseCount = 0
 
