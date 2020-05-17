@@ -9,7 +9,8 @@ import { createMuiTheme } from '@material-ui/core/styles'
 import { teal } from '@material-ui/core/colors'
 // API Imports
 import axios from 'axios'
-// import exampleData from './exampleData'
+// import exampleData from './exampleDataAAPL'
+// import exampleData from './exampleDataDIS'
 
 const theme = createMuiTheme({	
 	palette: {
@@ -132,7 +133,7 @@ const App = () => {
 												<TableCell colSpan={6}>{intrinsicValue !== 0 ? (currencySymbol + intrinsicValue) : "Calculation Error"}</TableCell>
 											</TableRow>
 											<TableRow>
-												<TableCell>Trailing P/E</TableCell>
+												<TableCell>PE Ratio &#40;TTM&#41;</TableCell>
 												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE ? financialsData.summaryDetail.trailingPE.fmt : ''}</TableCell>
 											</TableRow>
 											<TableRow>
@@ -160,17 +161,17 @@ const App = () => {
 										</TableHead>
 										<TableBody>
 											<TableRow>
-												<TableCell>Gross Margin</TableCell>
+												<TableCell>Gross Margin &#40;TTM&#41;</TableCell>
 												<TableCell colSpan={6}>{analysisData.financialData.grossMargins.fmt}</TableCell>
 											</TableRow>
 											<TableRow>
-												<TableCell>Profit Margin</TableCell>
+												<TableCell>Profit Margin &#40;TTM&#41;</TableCell>
 												<TableCell colSpan={6}>{analysisData.financialData.profitMargins.fmt}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>
-													Return on Equity<br/>
-													&#40;Good to be more than 12%&#41;
+													Return on Equity &#40;TTM&#41;<br/>
+													<small><strong>Good to be more than 12%</strong></small>
 												</TableCell>
 												<TableCell colSpan={6}>{analysisData.financialData.returnOnEquity.fmt}</TableCell>
 											</TableRow>
@@ -240,15 +241,15 @@ const App = () => {
 											</TableRow>
 											<TableRow>
 												<TableCell>
-													Debt to Equity Ratio<br/>
-													&#40;Good to be less than 1&#41;
+													Debt to Equity Ratio &#40;mrq&#41;<br/>
+													<small><strong>Good to be less than 1</strong></small>
 												</TableCell>
 												<TableCell colSpan={6}>{(analysisData.financialData.debtToEquity.raw / 100).toFixed(2)}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>
-													Current Ratio - Current Assets / Current Liabilities<br/>
-													&#40;Good to be more than 1&#41;
+													Current Ratio &#40;mrq&#41; - Current Assets / Current Liabilities<br/>
+													<small><strong>Good to be more than 1</strong></small>
 												</TableCell>
 												<TableCell colSpan={6}>{analysisData.financialData.currentRatio.fmt}</TableCell>
 											</TableRow>
@@ -264,14 +265,14 @@ const App = () => {
 										<TableBody>
 											<TableRow>
 												<TableCell>Annual Dividend Yield</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.dividendYield.fmt}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.dividendYield && financialsData.summaryDetail.dividendYield.fmt ? financialsData.summaryDetail.dividendYield.fmt : 'N/A'}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>
 													Dividend Payout Ratio<br/>
 													&#40;Good to be less than 50%&#41;
 												</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.payoutRatio.fmt}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.payoutRatio && financialsData.summaryDetail.payoutRatio.fmt ? financialsData.summaryDetail.payoutRatio.fmt : 'N/A'}</TableCell>
 											</TableRow>
 										</TableBody>
 									</Table>
@@ -373,10 +374,10 @@ const calculateIntrinsicValue = (financialsData, analysisData, outstandingShares
 	return ((totalDiscountedCashflow + (discountedCashflow[9] * 12) + analysisData.financialData.totalCash.raw - analysisData.financialData.totalDebt.raw) / outstandingShares).toFixed(2)
 }
 
-const renderFinancials = (analysisData, type) => {
+const renderFinancials = (financialsData, type) => {
 	/* Start Financials */
 	let mappedDate = []
-	let dataFinancialsChart = analysisData.earnings.financialsChart[`${type}`]
+	let dataFinancialsChart = financialsData.earnings.financialsChart[`${type}`]
 	let mappedRevenue = [], meanRevenueIncrease = 0, positiveRevenueIncreaseCount = 0
 	let mappedEarnings = [], meanEarningsIncrease = 0, positiveEarningsIncreaseCount = 0
 
@@ -400,10 +401,10 @@ const renderFinancials = (analysisData, type) => {
 		}
 	})
 
-	meanRevenueIncrease /= dataFinancialsChart.length
-	meanEarningsIncrease /= dataFinancialsChart.length
+	meanRevenueIncrease /= (dataFinancialsChart.length - 1)
+	meanEarningsIncrease /= (dataFinancialsChart.length - 1)
 
-	// reverse cos the analysisData is somehow old to new. I want new to old (new at leftmost side)
+	// reverse cos the financialsData is somehow old to new. I want new to old (new at leftmost side)
 	mappedDate.reverse()
 	mappedRevenue.reverse()
 	mappedEarnings.reverse()
@@ -412,9 +413,9 @@ const renderFinancials = (analysisData, type) => {
 	/* Start Cashflow */
 	let dataCashflowStatements = []
 	if (type === "yearly") {
-		dataCashflowStatements = analysisData.cashflowStatementHistory.cashflowStatements
+		dataCashflowStatements = financialsData.cashflowStatementHistory.cashflowStatements
 	} else if (type === "quarterly") {
-		dataCashflowStatements = analysisData.cashflowStatementHistoryQuarterly.cashflowStatements
+		dataCashflowStatements = financialsData.cashflowStatementHistoryQuarterly.cashflowStatements
 	}
 	let mappedCashflow = [], meanCashflowIncrease = 0, positiveCashflowIncreaseCount = 0
 
@@ -432,7 +433,7 @@ const renderFinancials = (analysisData, type) => {
 		}
 	})
 
-	meanCashflowIncrease /= dataCashflowStatements.length
+	meanCashflowIncrease /= (dataCashflowStatements.length - 1)
 	/* End Cashflow */	
 
 	/* Display & Calculation Start */
@@ -449,18 +450,18 @@ const renderFinancials = (analysisData, type) => {
 	} else if (type === "quarterly") {
 		mappedDate.push(<TableCell key="mean">Mean Increase / Qtr</TableCell>)
 	}
-	mappedDate.push(<TableCell key="positiveIncreaseCount">Positive Increase Count</TableCell>)
+	mappedDate.push(<TableCell key="positiveIncreaseCount">Positive Increase In</TableCell>)
 	mappedRevenue.push(
 		<TableCell key="mean">{(meanRevenueIncrease * 100).toFixed(2)}%</TableCell>,
-		<TableCell key="positiveIncreaseCount">{positiveRevenueIncreaseCount} / {dataFinancialsChart.length - 1} years</TableCell>
+	<TableCell key="positiveIncreaseCount">{positiveRevenueIncreaseCount} / {dataFinancialsChart.length - 1} {type === 'yearly' ? 'years' : 'quarters'}</TableCell>
 	)
 	mappedEarnings.push(
 		<TableCell key="mean">{(meanEarningsIncrease * 100).toFixed(2)}%</TableCell>,
-		<TableCell key="positiveIncreaseCount">{positiveEarningsIncreaseCount} / {dataFinancialsChart.length - 1} years</TableCell>
+		<TableCell key="positiveIncreaseCount">{positiveEarningsIncreaseCount} / {dataFinancialsChart.length - 1} {type === 'yearly' ? 'years' : 'quarters'}</TableCell>
 	)
 	mappedCashflow.push(
 		<TableCell key="mean">{(meanCashflowIncrease * 100).toFixed(2)}%</TableCell>,
-		<TableCell key="positiveIncreaseCount">{positiveCashflowIncreaseCount} / {dataCashflowStatements.length - 1} years</TableCell>
+		<TableCell key="positiveIncreaseCount">{positiveCashflowIncreaseCount} / {dataCashflowStatements.length - 1} {type === 'yearly' ? 'years' : 'quarters'}</TableCell>
 	)
 	/* Display & Calculation End */
 
@@ -494,7 +495,7 @@ const renderEPSHistory = (data) => {
 					{d.date}
 				</TableCell>
 				<TableCell colSpan={3}>
-					{d.actual.fmt}
+					{d.actual.fmt} &#40;{d.actual.raw >= d.estimate.raw ? "Beat" : d.actual.raw === d.estimate.raw ? "Met" : "Missed"}&#41;
 				</TableCell>
 				<TableCell colSpan={3}>
 					{d.estimate.fmt}
