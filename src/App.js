@@ -93,7 +93,7 @@ const App = () => {
 						<Typography variant="h4">Stock Analysis</Typography>
 					</Grid>
 					<Grid item xs={12}>
-						<TextField variant="outlined" fullWidth label="Enter stock symbol (e.g. AAPL, V, BABA)" value={query} onChange={event => setQuery(event.target.value)} />
+						<TextField onKeyDown={(event) => event.which === 13 && fetchData()} variant="outlined" fullWidth label="Enter stock symbol (e.g. AAPL, V, BABA)" value={query} onChange={event => setQuery(event.target.value)} />
 					</Grid>
 					<Grid item xs={12}>
 						<Button color="primary" variant="contained" onClick={fetchData}>
