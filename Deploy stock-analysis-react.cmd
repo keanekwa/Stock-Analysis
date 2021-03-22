@@ -1,1 +1,0 @@
-yarn build && cmd /k firebase deploy
