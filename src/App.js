@@ -39,7 +39,7 @@ const App = () => {
 				"headers": {
 					"content-type":"application/octet-stream",
 					"x-rapidapi-host":"apidojo-yahoo-finance-v1.p.rapidapi.com",
-					"x-rapidapi-key":"805f819a5emsh95d2744e0ddef68p1d8500jsn95d02e0277d1"
+					"x-rapidapi-key":process.env.REACT_APP_RAPIDAPI_KEY
 				},
 				"params": {
 					"symbol": query
@@ -58,7 +58,7 @@ const App = () => {
 				"headers": {
 					"content-type":"application/octet-stream",
 					"x-rapidapi-host":"apidojo-yahoo-finance-v1.p.rapidapi.com",
-					"x-rapidapi-key":"805f819a5emsh95d2744e0ddef68p1d8500jsn95d02e0277d1"
+					"x-rapidapi-key":process.env.REACT_APP_RAPIDAPI_KEY
 				},
 				"params": {
 					"symbol": query
