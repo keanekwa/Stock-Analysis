@@ -18,6 +18,13 @@ const theme = createMuiTheme({
 			main: teal[400],
 			dark: teal[600]
 		}
+	},
+	overrides: {
+		MuiTableCell: {
+			root: {
+				padding: '10px 14px'
+			}
+		}
 	}
 })
 
@@ -130,10 +137,18 @@ const App = () => {
 											</TableRow>
 											<TableRow>
 												<TableCell>Intrinsic Value</TableCell>
-												<TableCell colSpan={6}>{intrinsicValue !== 0 ? (currencySymbol + intrinsicValue) : "Calculation Error"}</TableCell>
+												<TableCell colSpan={6}>{(intrinsicValue === 0 || isNaN(intrinsicValue)) ? "Insufficient info to calculate" : (currencySymbol + intrinsicValue)}</TableCell>
 											</TableRow>
 											<TableRow>
-												<TableCell>PE Ratio &#40;TTM&#41;</TableCell>
+												<TableCell>Market Cap</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.marketCap ? financialsData.summaryDetail.marketCap.fmt : ''}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>P/S Ratio &#40;TTM&#41;</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.priceToSalesTrailing12Months ? financialsData.summaryDetail.priceToSalesTrailing12Months.fmt : ''}</TableCell>
+											</TableRow>
+											<TableRow>
+												<TableCell>P/E Ratio &#40;TTM&#41;</TableCell>
 												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE ? financialsData.summaryDetail.trailingPE.fmt : ''}</TableCell>
 											</TableRow>
 											<TableRow>
