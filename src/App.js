@@ -141,19 +141,19 @@ const App = () => {
 											</TableRow>
 											<TableRow>
 												<TableCell>Market Cap</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.marketCap ? financialsData.summaryDetail.marketCap.fmt : ''}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.marketCap ? (currencySymbol + financialsData.summaryDetail.marketCap.fmt) : '-'}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>P/S Ratio &#40;TTM&#41;</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.priceToSalesTrailing12Months ? financialsData.summaryDetail.priceToSalesTrailing12Months.fmt : ''}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.priceToSalesTrailing12Months ? financialsData.summaryDetail.priceToSalesTrailing12Months.fmt : '-'}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>P/E Ratio &#40;TTM&#41;</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE ? financialsData.summaryDetail.trailingPE.fmt : ''}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.trailingPE ? financialsData.summaryDetail.trailingPE.fmt : '-'}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>Forward P/E</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.forwardPE ? financialsData.summaryDetail.forwardPE.fmt : ''}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.forwardPE ? financialsData.summaryDetail.forwardPE.fmt : '-'}</TableCell>
 											</TableRow>
 										</TableBody>
 
@@ -280,14 +280,14 @@ const App = () => {
 										<TableBody>
 											<TableRow>
 												<TableCell>Annual Dividend Yield</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.dividendYield && financialsData.summaryDetail.dividendYield.fmt ? financialsData.summaryDetail.dividendYield.fmt : 'N/A'}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.dividendYield && financialsData.summaryDetail.dividendYield.fmt ? financialsData.summaryDetail.dividendYield.fmt : '-'}</TableCell>
 											</TableRow>
 											<TableRow>
 												<TableCell>
 													Dividend Payout Ratio<br/>
 													&#40;Good to be less than 50%&#41;
 												</TableCell>
-												<TableCell colSpan={6}>{financialsData.summaryDetail.payoutRatio && financialsData.summaryDetail.payoutRatio.fmt ? financialsData.summaryDetail.payoutRatio.fmt : 'N/A'}</TableCell>
+												<TableCell colSpan={6}>{financialsData.summaryDetail.payoutRatio && financialsData.summaryDetail.payoutRatio.fmt ? financialsData.summaryDetail.payoutRatio.fmt : '-'}</TableCell>
 											</TableRow>
 										</TableBody>
 									</Table>
