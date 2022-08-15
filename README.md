@@ -11,6 +11,6 @@ In other words, step 1 above is a data-driven quantitative process, whereas step
 
 With this project, all I need to do is key in a stock ticker symbol (NYSE and NASDAQ supported), and it will instantly do up the same preliminary analysis in a click of a button.
 
-Example analysis of AAPL stock:
+Example analysis of AAPL stock (correct as of 15 Aug 2022):
 
-![image](https://user-images.githubusercontent.com/8297863/184592574-91537650-2e73-45ad-85f5-391a0e77b607.png)
+![image](https://user-images.githubusercontent.com/8297863/184592661-81d07ec1-57f3-48b5-b0c0-bbbb234bad82.png)
